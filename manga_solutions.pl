@@ -52,7 +52,95 @@ moves( State, Open, Closed,[Next,State]):-
 		\+ member([Next,_],Open),
 		\+ member([Next,_],Closed).
 
+
 % Problem 1 Informed
+
+moveIn([A, B, C | T], NewState):-
+    availableMovesIn([A, B, C | T], Moves),
+    member(N, Moves),
+    removeElementByIndexIn([A, B, C | T], N, NewState).
+
+availableMovesIn(List, Output):-
+    availableMovesIn(List, 0, Output).
+availableMovesIn([], _, []).
+availableMovesIn([_|T], N, [N | Output]):-
+    Q is N+1,
+    availableMovesIn(T, Q, Output).
+
+removeElementByIndexIn([_|T], 0, T).
+
+removeElementByIndexIn([H|T], N, [H | NewState]):-
+    Q is N - 1,
+    removeElementByIndexIn(T, Q, NewState).
+
+
+:-use_module(library(lists)).
+
+threeSumIn(Start,Goal, Output):-
+    	getHeuristicIn(Start, H, Goal),
+		pathIn([[Start,null, H]],[],Goal, Output).
+
+
+pathIn(Open, Closed, Goal, [A, B, C]):-
+		getBestChildIn(Open, [[A, B, C], Parent, H], RestOfOpen),
+    	Sum is A + B + C,
+    	Goal = Sum.
+
+pathIn(Open, Closed, Goal, Output):-
+		getBestChildIn(Open, Best, RestOfOpen),
+		getchildrenIn(Best, RestOfOpen, Closed, Goal, Children),
+		addListToOpenIn(Children , RestOfOpen, NewOpen),
+		pathIn(NewOpen, [Best | Closed], Goal, Output).
+
+
+getchildrenIn([State, Parent, _], Open ,Closed, Goal, Children):-
+		bagof(X, movesIn(State, Open, Closed, Goal, X), Children), ! .
+getchildrenIn(_,_,_,_, []):-!.
+
+
+addListToOpenIn([], RestOfOpen, RestOfOpen).
+addListToOpenIn([H|T], RestOfOpen, [H | NewOpen]):-
+		addListToOpenIn(T, RestOfOpen, NewOpen).
+
+
+removeFromOpenIn([State|RestOpen], State, RestOpen).
+removeFromOpenIn([H|T], State, [H|RestOpen]):-
+    removeFromOpenIn(T, State, RestOpen).
+
+
+movesIn(State, Open, Closed, Goal, [Next, State, H]):-
+		moveIn(State, Next),
+    	getHeuristicIn(Next, H, Goal),
+		\+ member([Next,_, _],Open),
+		\+ member([Next,_, _],Closed).
+
+calcSumIn([], 0).
+calcSumIn([H|T], Sum):-
+    calcSumIn(T, Sum1),
+    Sum is H + Sum1.
+
+getHeuristicIn([], Goal, Goal):-!.
+
+getHeuristicIn(State, R, Goal):-
+    calcSumIn(State, H),
+	(   Goal > H -> R is Goal - H
+    ;   R is H - Goal).
+
+getBestChildIn([Child], Child, []):-!.
+getBestChildIn(Open, Best, RestOpen):-
+	getBestChild1In(Open, Best),
+	removeFromOpenIn(Open, Best, RestOpen), !.
+
+getBestChild1In([State], State):-!.
+getBestChild1In([State|Rest], Best):-
+	getBestChild1In(Rest, Temp),
+	getBestIn(State, Temp, Best).
+
+getBestIn([State, Parent, H1], [_, _, H2], [State, Parent, H1]):-
+	H1 < H2, !.
+getBestIn([_, _, _], [State1, Parent1, H1], [State1, Parent1, H1]).
+
+
 
 % Problem 2 Informed
 
