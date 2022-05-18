@@ -158,16 +158,14 @@ moveDeletiveEditing(State, NewState):-
 %get difference in place
 
 
-getHeuristic([H|T1],N,Goal):-
-    not(member(H, Goal)),
-    getHeuristic(T1,V, Goal),
-    N is V + 1.
+getHeuristic([],0,_):-!.
 
-getHeuristic([H|T1],N,Goal):-
-    member(H, Goal),
-    getHeuristic(T1,N, Goal). 
-    
-getHeuristic([], 0, _). 
+getHeuristic([H|T1],V,[H|T2]):-
+    getHeuristic(T1,V,T2),!.
+
+getHeuristic([_|T1],V,Goal):-
+    getHeuristic(T1,Y,Goal),
+    V is Y+1.
 
 %Get Best Child
 %State Representation --> [State, Parent, H]
@@ -185,8 +183,7 @@ getBestChild1([State | Rest], Best):-
 getBestChild([Child], Child, []).
 getBestChild(Open, Best, RestOpen):-
     getBestChild1(Open, Best),
-    removeElementByValue(Best, Open, RestOpen).
-
+    removeElementByValue(Open, Best, RestOpen).
 
 
 %%%%%%DOVA
@@ -201,32 +198,31 @@ getBestChild(Open, Best, RestOpen):-
 
 
 
-getChildrenDeletive(State, Open ,Closed, Children, H, Goal):-
-    bagof(X, movesDeletive( State, Open, Closed, X, H, Goal), Children).
+getChildrenDeletive(State, Open ,Closed, Children, Goal):-
+    bagof(X, movesDeletive( State, Open, Closed, X, Goal), Children).
+
 getChildrenDeletive(_,_,_, [],_,_).
 
-movesDeletive(State, Open, Closed, [Next,State,H], H, Goal):-
+movesDeletive(State, Open, Closed, [Next,State,H], Goal):-
     moveDeletiveEditing(State, Next),
-    \+ member(State, Open),
-    \+ member(State, Closed),
+    \+ member([Next,_,_], Open),
+    \+ member([Next,_,_], Closed),
     getHeuristic(Next, H, Goal).
-
 
 % Get Path
 
 pathDeletiveEditing(Open, Closed, Goal):-
-	getBestChild(Open, [Goal, Parent, H], RestOfOpen),
-    printsolution([Goal,Parent, H], Closed),!.
+	getBestChild(Open, [Goal, Parent, H], RestOfOpen),!.
     
 pathDeletiveEditing(Open, Closed, Goal):-
     getBestChild(Open, [State,Parent , H], RestOpen),
-    getChildrenDeletive(State, Open, Closed, Children, H, Goal),
+    getChildrenDeletive(State, Open, Closed, Children, Goal),
     addListToOpenBFS(Children , RestOpen, NewOpen),
 	pathDeletiveEditing(NewOpen, [[State,Parent , H] | Closed], Goal).
    
 deletiveEditing(Start, Goal):-
     getHeuristic(Start, H, Goal),
-    pathDeletiveEditing([[Start,null, H]],[], Goal).
+    pathDeletiveEditing([[Start,null, H]],[], Goal), !.
 
 addListToOpenBFS(Children, [], Children).
 addListToOpenBFS(Children, [H|Open], [H|NewOpen]):-
@@ -238,5 +234,4 @@ printsolution([State, Parent, H], Closed):-
 		member([Parent, GrandParent, PC1, H1, TC1], Closed),
 		printsolution([Parent, GrandParent, PC1, H1, TC1], Closed),
 		write(State), write(' H:'), write(H),  nl.
-
 %%problems might be moving or getting the best child or assigning heuristics
